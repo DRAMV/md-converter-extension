@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="logo">
+    <div class="logo-icon">⬇</div>
+    <span class="logo-text">MD Converter</span>
+  </div>
+
+  <div class="section">
+    <label>Google Gemini API Key</label>
+    <input type="password" id="apiKey" placeholder="AQ. or AIza...">
+    <p class="hint">
+      Free key at
+      <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>
+      — no credit card needed
+    </p>
+  </div>
+
+  <button class="btn btn-primary" id="save">Save key</button>
+
+  <div class="divider"></div>
+
+  <button class="btn btn-dark" id="openSidebar">Open sidebar on this page</button>
+
+  <p class="status" id="status"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

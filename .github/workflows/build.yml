@@ -1,0 +1,26 @@
+name: Package Extension
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zip extension
+        run: |
+          zip -r md-converter-extension.zip . \
+            --exclude "*.git*" \
+            --exclude ".github/*" \
+            --exclude "*.md"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: md-converter-extension
+          path: md-converter-extension.zip

@@ -1,0 +1,18 @@
+# .gitignore
+
+# Node modules (if you ran npm install for icon generation)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temp files
+*.zip

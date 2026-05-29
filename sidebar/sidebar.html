@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <div class="header">
+    <span class="logo">⬇ MD Converter</span>
+    <button class="close-btn" id="closeBtn">✕</button>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn" id="btnArea">📷 Snap area</button>
+    <button class="action-btn" id="btnFullPage">🖼 Full screenshot</button>
+    <button class="action-btn" id="btnDOM">📄 Page text</button>
+    <button class="action-btn" id="btnUpload">📎 Upload file</button>
+  </div>
+
+  <input type="file" id="fileInput"
+    accept=".pdf,.png,.jpg,.jpeg,.webp,.mp3,.mp4,.webm,.txt,.md,.csv,.html"
+    style="display:none">
+
+  <div class="status-bar" id="statusBar" style="display:none"></div>
+
+  <div class="preview-area" id="previewArea" style="display:none">
+    <div class="preview-toolbar">
+      <span class="preview-title" id="previewTitle">output.md</span>
+      <div class="preview-actions">
+        <button id="btnCopy">Copy</button>
+        <button id="btnDownload" class="primary">Download</button>
+      </div>
+    </div>
+    <textarea id="mdOutput" spellcheck="false"></textarea>
+  </div>
+
+  <!-- Load as module so imports work -->
+  <script type="module" src="sidebar.js"></script>
+</body>
+</html>
