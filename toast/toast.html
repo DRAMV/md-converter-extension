@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="toast.css">
+</head>
+<body>
+  <div class="toast" id="toast">
+
+    <div class="toast-header">
+      <div class="toast-icon">📄</div>
+      <div class="toast-text">
+        <div class="toast-title">PDF detected</div>
+        <div class="toast-subtitle" id="pdfName">document.pdf</div>
+      </div>
+      <button class="toast-close" id="btnDismiss">✕</button>
+    </div>
+
+    <div class="toast-actions">
+      <button class="btn btn-primary" id="btnConvert">
+        Convert to Markdown
+      </button>
+      <button class="btn btn-secondary" id="btnDismissAlt">
+        Dismiss
+      </button>
+    </div>
+
+    <div class="toast-progress">
+      <div class="toast-progress-bar" id="progressBar"></div>
+    </div>
+
+  </div>
+
+  <script src="toast.js"></script>
+</body>
+</html>

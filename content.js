@@ -1,10 +1,18 @@
 const SIDEBAR_ID = "md-converter-sidebar";
+const TOAST_ID   = "md-converter-toast";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "TOGGLE_SIDEBAR") {
     toggleSidebar();
     sendResponse({ ok: true });
   }
+
+  // ── NEW: PDF detected by background script ─────────────────────────────
+  if (message.type === "PDF_DETECTED") {
+    showPDFToast(message.url, message.filename);
+    sendResponse({ ok: true });
+  }
+
   return true;
 });
 
@@ -52,16 +60,106 @@ function injectSidebar() {
   });
 }
 
-// ─── Messages from sidebar iframe ────────────────────────────────────────────
+// ── NEW: Show PDF toast notification ──────────────────────────────────────────
+
+function showPDFToast(pdfUrl, filename) {
+  // Don't show duplicate toasts
+  if (document.getElementById(TOAST_ID)) return;
+
+  const iframe   = document.createElement("iframe");
+  iframe.id      = TOAST_ID;
+  iframe.src     = chrome.runtime.getURL("toast/toast.html");
+  iframe.style.cssText = `
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    width: 360px !important;
+    height: 160px !important;
+    border: none !important;
+    z-index: 2147483646 !important;
+    background: transparent !important;
+    border-radius: 12px !important;
+  `;
+
+  document.documentElement.appendChild(iframe);
+
+  iframe.addEventListener("load", () => {
+    iframe.contentWindow.postMessage({
+      type:     "PDF_INFO",
+      url:      pdfUrl,
+      filename: filename
+    }, "*");
+  });
+}
+
+// ── NEW: Handle messages from toast iframe ────────────────────────────────────
 
 window.addEventListener("message", async (e) => {
   if (!e.data || !e.data.type) return;
 
-  // Only accept messages from our sidebar iframe
   const sidebar = document.getElementById(SIDEBAR_ID);
+  const toast   = document.getElementById(TOAST_ID);
+
+  // ── Toast messages ─────────────────────────────────────────────────────────
+
+  if (e.data.type === "PDF_DISMISS") {
+    if (toast) toast.remove();
+    return;
+  }
+
+  if (e.data.type === "TOAST_HIDDEN") {
+    if (toast) toast.remove();
+    return;
+  }
+
+  if (e.data.type === "PDF_CONVERT") {
+    // Remove toast
+    if (toast) toast.remove();
+
+    // Open sidebar first
+    injectSidebar();
+
+    // Wait for sidebar to load then trigger PDF conversion
+    const newSidebar = document.getElementById(SIDEBAR_ID);
+    if (newSidebar) {
+      newSidebar.addEventListener("load", async () => {
+        // Small delay so sidebar JS is ready
+        setTimeout(async () => {
+          try {
+            // Fetch PDF as base64 via background
+            const result = await chrome.runtime.sendMessage({
+              type: "FETCH_PDF_BASE64",
+              url:  location.href
+            });
+
+            if (result.error) {
+              newSidebar.contentWindow.postMessage({
+                type:  "CAPTURE_ERROR",
+                error: result.error
+              }, "*");
+              return;
+            }
+
+            // Send to sidebar for conversion
+            newSidebar.contentWindow.postMessage({
+              type:     "CONVERT_PDF_BASE64",
+              base64:   result.base64,
+              filename: location.href.split("/").pop().split("?")[0]
+            }, "*");
+
+          } catch (err) {
+            console.error("MD Converter: PDF conversion failed", err);
+          }
+        }, 500);
+      });
+    }
+    return;
+  }
+
+  // ── Sidebar messages — only accept from sidebar iframe ─────────────────────
+
   if (!sidebar) return;
 
-  // Use origin check instead of source check — more reliable across browsers
   const sidebarOrigin = chrome.runtime.getURL("").replace(/\/$/, "");
   if (!e.origin.startsWith(sidebarOrigin) && e.origin !== "null") return;
 

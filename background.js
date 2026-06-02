@@ -36,7 +36,69 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // ── NEW: fetch PDF as base64 for conversion ──────────────────────────────
+  if (message.type === "FETCH_PDF_BASE64") {
+    fetchPDFAsBase64(message.url).then(sendResponse);
+    return true;
+  }
+
 });
+
+// ── NEW: Auto-detect PDF tabs on navigation ──────────────────────────────────
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only trigger when page fully loads
+  if (changeInfo.status !== "complete") return;
+
+  // Check if it's a PDF
+  const url = tab.url || "";
+  const isPDF =
+    url.endsWith(".pdf") ||
+    url.includes(".pdf?") ||
+    (tab.title && tab.title.toLowerCase().endsWith(".pdf"));
+
+  if (!isPDF) return;
+
+  // Inject content script if not already there
+  chrome.scripting.executeScript(
+    { target: { tabId }, files: ["content.js"] },
+    () => {
+      if (chrome.runtime.lastError) {
+        // Already injected or restricted page — ignore
+        return;
+      }
+      // Tell content script a PDF was detected
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tabId, {
+          type:     "PDF_DETECTED",
+          url:      tab.url,
+          filename: tab.url.split("/").pop().split("?")[0]
+        });
+      }, 800);
+    }
+  );
+});
+
+// ── NEW: Fetch PDF from URL and return as base64 ─────────────────────────────
+
+async function fetchPDFAsBase64(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return { error: "Failed to fetch PDF: " + response.status };
+    }
+    const buffer     = await response.arrayBuffer();
+    const byteArray  = new Uint8Array(buffer);
+    let   binary     = "";
+    for (let i = 0; i < byteArray.byteLength; i++) {
+      binary += String.fromCharCode(byteArray[i]);
+    }
+    const base64 = btoa(binary);
+    return { base64 };
+  } catch (e) {
+    return { error: e.message };
+  }
+}
 
 async function handleConversion({ type, data, mimeType, filename }) {
   const { apiKey } = await chrome.storage.sync.get("apiKey");
@@ -90,10 +152,8 @@ async function handleConversion({ type, data, mimeType, filename }) {
     }
 
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts }],
         generationConfig: {
@@ -105,9 +165,7 @@ async function handleConversion({ type, data, mimeType, filename }) {
 
     if (!response.ok) {
       const err = await response.json();
-      return {
-        error: err.error?.message || `API error ${response.status}`
-      };
+      return { error: err.error?.message || `API error ${response.status}` };
     }
 
     const result   = await response.json();
@@ -125,9 +183,7 @@ async function handleConversion({ type, data, mimeType, filename }) {
 }
 
 function suggestFilename(original) {
-  if (original) {
-    return original.replace(/\.[^.]+$/, "") + ".md";
-  }
+  if (original) return original.replace(/\.[^.]+$/, "") + ".md";
   const date = new Date().toISOString().slice(0, 10);
   return `converted-${date}.md`;
 }

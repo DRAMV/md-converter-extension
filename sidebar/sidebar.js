@@ -35,12 +35,22 @@
     if (e.data.type === "CAPTURE_ERROR") {
       setStatus("Capture failed: " + e.data.error, "error");
     }
+
+    // ── PDF base64 conversion triggered from toast ─────────────────────────
+    if (e.data.type === "CONVERT_PDF_BASE64") {
+      convertContent({
+        type:     "pdf",
+        data:     "data:application/pdf;base64," + e.data.base64,
+        mimeType: "application/pdf",
+        filename: e.data.filename || "document.pdf"
+      });
+    }
+
   });
 
   // ─── Close button ──────────────────────────────────────────────────────────
 
   document.getElementById("closeBtn").addEventListener("click", () => {
-    // Post to parent window (the actual page)
     window.parent.postMessage({ type: "CLOSE_SIDEBAR" }, "*");
   });
 
@@ -235,7 +245,9 @@
       span.className     = "preview-title";
       span.textContent   = currentFilename;
       span.style.cursor  = "pointer";
-      span.addEventListener("click", function () { this.dispatchEvent(new Event("click")); });
+      span.addEventListener("click", function () {
+        this.dispatchEvent(new Event("click"));
+      });
       input.replaceWith(span);
     }
 
