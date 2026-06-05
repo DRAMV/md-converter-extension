@@ -18,7 +18,13 @@
   </div>
 
   <input type="file" id="fileInput"
-    accept=".pdf,.png,.jpg,.jpeg,.webp,.mp3,.mp4,.webm,.txt,.md,.csv,.html"
+    accept="
+      .pdf,
+      .png,.jpg,.jpeg,.webp,.gif,.tiff,.bmp,
+      .txt,.md,.csv,.html,
+      .mp3,.mp4,.webm,.wav,.ogg,.m4a,
+      .docx,.xlsx,.xls,.pptx
+    "
     style="display:none">
 
   <div class="status-bar" id="statusBar" style="display:none"></div>
@@ -34,7 +40,6 @@
     <textarea id="mdOutput" spellcheck="false"></textarea>
   </div>
 
-  <!-- Load as module so imports work -->
-  <script type="module" src="sidebar.js"></script>
+  <script src="sidebar.js"></script>
 </body>
 </html>

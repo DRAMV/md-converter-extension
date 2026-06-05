@@ -73,6 +73,8 @@ body {
   background: #e8f0fe;
 }
 
+/* ── Status bar ──────────────────────────────────────────────────────── */
+
 .status-bar {
   margin: 0 14px 10px;
   padding: 10px 12px;
@@ -81,6 +83,8 @@ body {
   background: #f0f0f0;
   color: #555;
   flex-shrink: 0;
+  display: none;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .status-bar.loading {
@@ -93,9 +97,16 @@ body {
   color: #900;
 }
 
+.status-bar.success {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+/* ── Preview area ────────────────────────────────────────────────────── */
+
 .preview-area {
   flex: 1;
-  display: flex;
+  display: none;
   flex-direction: column;
   margin: 0 14px 14px;
   border: 1px solid #e0e0e0;
@@ -168,4 +179,95 @@ body {
   background: white;
   color: #1a1a1a;
   min-height: 0;
+}
+
+/* ── Dark theme ──────────────────────────────────────────────────────── */
+
+body[data-theme="dark"] {
+  background: #1e1e1e;
+  color: #e8eaed;
+}
+
+body[data-theme="dark"] .header {
+  border-bottom-color: #3c3c3c;
+  background: #1e1e1e;
+}
+
+body[data-theme="dark"] .logo {
+  color: #e8eaed;
+}
+
+body[data-theme="dark"] .close-btn {
+  color: #aaa;
+}
+
+body[data-theme="dark"] .close-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+body[data-theme="dark"] .action-btn {
+  background: #2a2a2a;
+  border-color: #3c3c3c;
+  color: #e8eaed;
+}
+
+body[data-theme="dark"] .action-btn:hover {
+  border-color: #1a73e8;
+  background: #1e2d40;
+}
+
+body[data-theme="dark"] .status-bar {
+  background: #2a2a2a;
+  color: #aaa;
+}
+
+body[data-theme="dark"] .status-bar.loading {
+  background: #3a3000;
+  color: #ffd54f;
+}
+
+body[data-theme="dark"] .status-bar.error {
+  background: #3a0000;
+  color: #ff8a80;
+}
+
+body[data-theme="dark"] .status-bar.success {
+  background: #0a2e14;
+  color: #81c995;
+}
+
+body[data-theme="dark"] .preview-area {
+  border-color: #3c3c3c;
+}
+
+body[data-theme="dark"] .preview-toolbar {
+  background: #2a2a2a;
+  border-bottom-color: #3c3c3c;
+}
+
+body[data-theme="dark"] .preview-title {
+  color: #aaa;
+}
+
+body[data-theme="dark"] .preview-actions button {
+  background: #2a2a2a;
+  border-color: #3c3c3c;
+  color: #e8eaed;
+}
+
+body[data-theme="dark"] .preview-actions button.primary {
+  background: #1a73e8;
+  color: #fff;
+}
+
+body[data-theme="dark"] #mdOutput {
+  background: #1e1e1e;
+  color: #e8eaed;
+}
+
+body[data-theme="dark"] #mdCounter {
+  background: #2a2a2a;
+  color: #888;
+  border-top-color: #3c3c3c;
 }

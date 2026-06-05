@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MD Converter — Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+
+  <div class="page">
+
+    <!-- Sidebar nav -->
+    <nav class="nav">
+      <div class="nav-logo">
+        <div class="nav-logo-icon">⬇</div>
+        <span class="nav-logo-text">MD Converter</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#api"      class="nav-link active" data-section="api">🔑 API Key</a></li>
+        <li><a href="#output"   class="nav-link"        data-section="output">📄 Output</a></li>
+        <li><a href="#capture"  class="nav-link"        data-section="capture">📷 Capture</a></li>
+        <li><a href="#advanced" class="nav-link"        data-section="advanced">⚙️ Advanced</a></li>
+        <li><a href="#data"     class="nav-link"        data-section="data">🗄️ Data</a></li>
+      </ul>
+      <div class="nav-version">v1.2.0</div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <div class="topbar">
+        <h1 class="page-title" id="pageTitle">API Key</h1>
+        <div class="save-row">
+          <span class="save-status" id="saveStatus"></span>
+          <button class="btn btn-primary" id="btnSaveAll">Save settings</button>
+        </div>
+      </div>
+
+      <!-- ── Section: API Key ─────────────────────────────────────────── -->
+      <section class="section active" id="section-api">
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Google Gemini API Key</h2>
+            <p class="card-desc">Your key is stored locally in Chrome sync storage and never sent anywhere except directly to Google's API.</p>
+          </div>
+
+          <div class="field">
+            <label>API Key</label>
+            <div class="input-row">
+              <input type="password" id="apiKey" placeholder="AQ. or AIza...">
+              <button class="btn btn-ghost" id="btnToggleKey">Show</button>
+            </div>
+            <p class="field-hint">
+              Get a free key at
+              <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>
+              — no credit card required
+            </p>
+          </div>
+
+          <div class="api-status" id="apiStatus" style="display:none"></div>
+
+          <div class="field-row">
+            <button class="btn btn-secondary" id="btnTestKey">Test key</button>
+            <button class="btn btn-danger-ghost" id="btnClearKey">Remove key</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">AI Model</h2>
+            <p class="card-desc">Select which Gemini model to use for conversions.</p>
+          </div>
+          <div class="field">
+            <label>Model</label>
+            <select id="aiModel">
+              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (Free · Recommended)</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash (Free · Higher quality)</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash (Free · Faster)</option>
+            </select>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── Section: Output ──────────────────────────────────────────── -->
+      <section class="section" id="section-output">
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Filename Template</h2>
+            <p class="card-desc">Control how output files are named. Use tokens below.</p>
+          </div>
+
+          <div class="field">
+            <label>Template</label>
+            <input type="text" id="filenameTemplate" placeholder="{date}-{title}">
+            <p class="field-hint">
+              Available tokens:
+              <code>{date}</code> — today's date (2026-01-15) ·
+              <code>{title}</code> — page title ·
+              <code>{time}</code> — current time (14-30)
+            </p>
+          </div>
+
+          <div class="field">
+            <label>Preview</label>
+            <div class="preview-chip" id="filenamePreview">2026-01-15-my-page-title.md</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Theme</h2>
+            <p class="card-desc">Choose the sidebar appearance.</p>
+          </div>
+
+          <div class="field">
+            <label>Sidebar theme</label>
+            <div class="radio-group" id="themeGroup">
+              <label class="radio-option">
+                <input type="radio" name="theme" value="light" checked>
+                <span class="radio-box">
+                  <span class="radio-icon">☀️</span>
+                  <span class="radio-label">Light</span>
+                </span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="theme" value="dark">
+                <span class="radio-box">
+                  <span class="radio-icon">🌙</span>
+                  <span class="radio-label">Dark</span>
+                </span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="theme" value="system">
+                <span class="radio-box">
+                  <span class="radio-icon">💻</span>
+                  <span class="radio-label">System</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── Section: Capture ─────────────────────────────────────────── -->
+      <section class="section" id="section-capture">
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Default Capture Mode</h2>
+            <p class="card-desc">When you open the sidebar, this mode will be highlighted as the primary action.</p>
+          </div>
+
+          <div class="field">
+            <label>Preferred mode</label>
+            <div class="capture-grid" id="captureGrid">
+              <label class="capture-option">
+                <input type="radio" name="captureMode" value="area">
+                <span class="capture-box">
+                  <span class="capture-icon">📷</span>
+                  <span class="capture-name">Snap area</span>
+                  <span class="capture-desc">Draw a selection</span>
+                </span>
+              </label>
+              <label class="capture-option">
+                <input type="radio" name="captureMode" value="fullpage" checked>
+                <span class="capture-box">
+                  <span class="capture-icon">🖼</span>
+                  <span class="capture-name">Full screenshot</span>
+                  <span class="capture-desc">Entire visible page</span>
+                </span>
+              </label>
+              <label class="capture-option">
+                <input type="radio" name="captureMode" value="dom">
+                <span class="capture-box">
+                  <span class="capture-icon">📄</span>
+                  <span class="capture-name">Page text</span>
+                  <span class="capture-desc">Readable content</span>
+                </span>
+              </label>
+              <label class="capture-option">
+                <input type="radio" name="captureMode" value="upload">
+                <span class="capture-box">
+                  <span class="capture-icon">📎</span>
+                  <span class="capture-name">Upload file</span>
+                  <span class="capture-desc">PDF, image, text</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">PDF Auto-detect</h2>
+            <p class="card-desc">Show a toast notification when a PDF is opened in the browser.</p>
+          </div>
+          <div class="field">
+            <label class="toggle-label">
+              <span>Auto-detect PDFs</span>
+              <div class="toggle" id="togglePdfDetect">
+                <input type="checkbox" id="pdfDetect" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── Section: Advanced ────────────────────────────────────────── -->
+      <section class="section" id="section-advanced">
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Max Output Tokens</h2>
+            <p class="card-desc">Controls the maximum length of the converted Markdown. Higher values allow longer documents but use more API quota.</p>
+          </div>
+
+          <div class="field">
+            <label>
+              Token limit
+              <span class="token-value" id="tokenValue">8192</span>
+            </label>
+            <input
+              type="range"
+              id="maxTokens"
+              min="1024"
+              max="65536"
+              step="1024"
+              value="8192"
+            >
+            <div class="slider-labels">
+              <span>1K (short)</span>
+              <span>32K</span>
+              <span>65K (long)</span>
+            </div>
+            <p class="field-hint">Default: 8192. Increase for long PDFs or documents.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Conversion Temperature</h2>
+            <p class="card-desc">Controls how creative vs. literal the AI is. Lower = more accurate, higher = more paraphrased.</p>
+          </div>
+
+          <div class="field">
+            <label>
+              Temperature
+              <span class="token-value" id="tempValue">0.2</span>
+            </label>
+            <input
+              type="range"
+              id="temperature"
+              min="0"
+              max="1"
+              step="0.1"
+              value="0.2"
+            >
+            <div class="slider-labels">
+              <span>0 (accurate)</span>
+              <span>0.5</span>
+              <span>1 (creative)</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── Section: Data ────────────────────────────────────────────── -->
+      <section class="section" id="section-data">
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Storage Usage</h2>
+            <p class="card-desc">Current usage of Chrome sync storage for this extension.</p>
+          </div>
+          <div class="storage-bar-wrap">
+            <div class="storage-bar">
+              <div class="storage-bar-fill" id="storageFill"></div>
+            </div>
+            <span class="storage-label" id="storageLabel">Calculating...</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Reset Settings</h2>
+            <p class="card-desc">Reset all settings to their default values. Your API key will not be affected.</p>
+          </div>
+          <button class="btn btn-secondary" id="btnResetSettings">Reset to defaults</button>
+        </div>
+
+        <div class="card card-danger">
+          <div class="card-header">
+            <h2 class="card-title">Clear All Data</h2>
+            <p class="card-desc">Permanently delete all stored data including your API key, settings, and history. This cannot be undone.</p>
+          </div>
+          <button class="btn btn-danger" id="btnClearAll">Clear all data</button>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

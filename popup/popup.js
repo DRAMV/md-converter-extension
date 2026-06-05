@@ -10,15 +10,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Could not load saved key:", e);
   }
 
-  // Save key — accept any format, no prefix restriction
+  // Save key
   document.getElementById("save").addEventListener("click", async () => {
     const key = keyInput.value.trim();
-
     if (!key) {
       showStatus("Please enter an API key.", "error");
       return;
     }
-
     try {
       await chrome.storage.sync.set({ apiKey: key });
       showStatus("Key saved successfully!", "success");
@@ -58,13 +56,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Send toggle
       chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_SIDEBAR" });
-
       window.close();
 
     } catch (e) {
       console.error("Sidebar open error:", e);
       showStatus("Error: " + e.message, "error");
     }
+  });
+
+  // Open settings page
+  document.getElementById("openSettings").addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+    window.close();
   });
 
   function showStatus(msg, type) {

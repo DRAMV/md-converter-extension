@@ -1,11 +1,80 @@
-// Load converter utils first, then run sidebar logic
 (async function () {
 
-  // Dynamically load converter.js into this iframe context
-  await loadScript(chrome.runtime.getURL("utils/converter.js"));
+  // ─── Helper: load script — MUST be defined first ──────────────────────────
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector('script[src="' + src + '"]')) {
+        resolve();
+        return;
+      }
+      const s   = document.createElement("script");
+      s.src     = src;
+      s.onload  = () => {
+        console.log("MD Converter: loaded", src.split("/").pop());
+        resolve();
+      };
+      s.onerror = () => {
+        console.error("MD Converter: FAILED to load", src);
+        reject(new Error("Failed to load: " + src));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  // ─── Load all utility scripts ──────────────────────────────────────────────
+
+  try {
+    await loadScript(chrome.runtime.getURL("utils/converter.js"));
+    await loadScript(chrome.runtime.getURL("utils/image-analyzer.js"));
+    await loadScript(chrome.runtime.getURL("utils/office-converter.js"));
+    await loadScript(chrome.runtime.getURL("libs/mammoth.min.js"));
+    await loadScript(chrome.runtime.getURL("libs/xlsx.min.js"));
+  } catch (err) {
+    console.error("MD Converter: script load failed —", err.message);
+  }
+
+  // Verify all loaded
+  console.log("MD Converter scripts:", {
+    detectFileType:     typeof detectFileType,
+    detectImageSubtype: typeof detectImageSubtype,
+    getImagePrompt:     typeof getImagePrompt,
+    convertDOCX:        typeof convertDOCX
+  });
+
+  // ── Load settings ──────────────────────────────────────────────────────────
+
+  const settings = await chrome.storage.sync.get(["theme", "captureMode"]);
+  applyTheme(settings.theme || "light");
+  highlightCaptureMode(settings.captureMode || "fullpage");
+
+  function applyTheme(theme) {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = theme === "dark" || (theme === "system" && prefersDark);
+    document.body.setAttribute("data-theme", isDark ? "dark" : "light");
+  }
+
+  function highlightCaptureMode(mode) {
+    const map = {
+      area:     "btnArea",
+      fullpage: "btnFullPage",
+      dom:      "btnDOM",
+      upload:   "btnUpload"
+    };
+    const btnId = map[mode];
+    if (btnId) {
+      const btn = document.getElementById(btnId);
+      if (btn) {
+        btn.style.borderColor = "#1a73e8";
+        btn.style.background  = "#e8f0fe";
+        btn.style.fontWeight  = "600";
+      }
+    }
+  }
 
   let currentFilename = "output.md";
   let pageInfo        = {};
+  let statusTimer     = null;
 
   // ─── Messages from content script ─────────────────────────────────────────
 
@@ -14,6 +83,18 @@
 
     if (e.data.type === "PAGE_INFO") {
       pageInfo = e.data;
+    }
+
+    // ── Copy result from content script ──────────────────────────────────
+    if (e.data.type === "COPY_TEXT_RESULT") {
+      if (e.data.ok) {
+        const btn       = document.getElementById("btnCopy");
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+      } else {
+        setStatus("Copy failed — select text manually and press Cmd+C", "error");
+      }
+      return;
     }
 
     if (e.data.type === "CAPTURED_IMAGE") {
@@ -36,7 +117,6 @@
       setStatus("Capture failed: " + e.data.error, "error");
     }
 
-    // ── PDF base64 conversion triggered from toast ─────────────────────────
     if (e.data.type === "CONVERT_PDF_BASE64") {
       convertContent({
         type:     "pdf",
@@ -45,7 +125,6 @@
         filename: e.data.filename || "document.pdf"
       });
     }
-
   });
 
   // ─── Close button ──────────────────────────────────────────────────────────
@@ -95,24 +174,74 @@
       return;
     }
 
-    setStatus("Reading " + file.name + "...", "loading");
     currentFilename = generateFilename(file.name);
+    setStatus("Reading " + file.name + "...", "loading");
 
     try {
-      if (fileType === "text") {
-        const text = await readFileAsText(file);
-        convertContent({ type: "text", data: text, filename: file.name });
-      } else {
-        const base64 = await readFileAsBase64(file);
+
+      if (fileType === "docx") {
+        setStatus("Parsing Word document...", "loading");
+        const buffer     = await readFileAsArrayBuffer(file);
+        const structured = await convertDOCX(buffer);
+        convertContent({ type: "text", data: structured, filename: file.name, subtype: "docx" });
+
+      } else if (fileType === "xlsx") {
+        setStatus("Parsing spreadsheet...", "loading");
+        const buffer     = await readFileAsArrayBuffer(file);
+        const structured = await convertXLSX(buffer);
+        convertContent({ type: "text", data: structured, filename: file.name, subtype: "xlsx" });
+
+      } else if (fileType === "pptx") {
+        setStatus("Parsing presentation...", "loading");
+        const buffer     = await readFileAsArrayBuffer(file);
+        const structured = await convertPPTX(buffer);
+        convertContent({ type: "text", data: structured, filename: file.name, subtype: "pptx" });
+
+      } else if (fileType === "image") {
+        setStatus("Analysing image...", "loading");
+        const base64  = await readFileAsBase64(file);
+        const subtype = await detectImageSubtype(base64, file.name);
+
+        const subtypeLabels = {
+          screenshot:       "Screenshot",
+          scanned_document: "Scanned document",
+          handwriting:      "Handwriting",
+          table:            "Table / data",
+          chart:            "Chart / graph",
+          diagram:          "Diagram",
+          slide:            "Presentation slide",
+          receipt:          "Receipt / invoice",
+          document_page:    "Document page",
+          photo:            "Photo",
+          banner:           "Banner / wide image"
+        };
+
+        setStatus(
+          "Detected: " + (subtypeLabels[subtype] || subtype) + " — converting...",
+          "loading"
+        );
+
+        await new Promise(r => setTimeout(r, 300));
+
         convertContent({
-          type:     fileType,
+          type:     "image",
           data:     base64,
           mimeType: file.type,
-          filename: file.name
+          filename: file.name,
+          subtype:  subtype
         });
+
+      } else if (fileType === "text") {
+        const text = await readFileAsText(file);
+        convertContent({ type: "text", data: text, filename: file.name });
+
+      } else {
+        const base64 = await readFileAsBase64(file);
+        convertContent({ type: fileType, data: base64, mimeType: file.type, filename: file.name });
       }
+
     } catch (err) {
-      setStatus("Failed to read file: " + err.message, "error");
+      setStatus("Failed to process file: " + err.message, "error");
     }
 
     e.target.value = "";
@@ -121,7 +250,18 @@
   // ─── Core conversion ───────────────────────────────────────────────────────
 
   async function convertContent(payload) {
-    setStatus("Converting with Gemini...", "loading");
+    const bar = document.getElementById("statusBar");
+    const currentText = bar ? bar.textContent.toLowerCase() : "";
+    const alreadyConverting = currentText.includes("converting") ||
+                              currentText.includes("parsing") ||
+                              currentText.includes("extracting") ||
+                              currentText.includes("analysing") ||
+                              currentText.includes("analyzing");
+
+    if (!alreadyConverting) {
+      setStatus("Converting with Gemini...", "loading");
+    }
+
     hidePreview();
 
     try {
@@ -145,7 +285,9 @@
         || "output.md";
 
       showPreview(result.markdown);
-      setStatus("", "");
+
+      const wordCount = result.markdown.trim().split(/\s+/).length;
+      setStatus("✓ Done — " + wordCount + " words", "success");
 
     } catch (err) {
       setStatus("Unexpected error: " + err.message, "error");
@@ -175,33 +317,43 @@
 
   function setStatus(msg, type) {
     const bar = document.getElementById("statusBar");
-    if (!msg) {
-      bar.style.display = "none";
-      bar.textContent   = "";
-      return;
+    if (!bar) return;
+
+    if (statusTimer) {
+      clearTimeout(statusTimer);
+      statusTimer = null;
     }
+
+    bar.className     = "status-bar";
+    bar.innerHTML     = "";
+    bar.style.display = "none";
+
+    if (!msg) return;
+
     bar.style.display = "block";
     bar.textContent   = msg;
     bar.className     = "status-bar " + (type || "");
+
+    if (type === "success") {
+      statusTimer = setTimeout(() => {
+        bar.className     = "status-bar";
+        bar.innerHTML     = "";
+        bar.style.display = "none";
+        statusTimer       = null;
+      }, 3000);
+    }
   }
 
-  // ─── Copy ──────────────────────────────────────────────────────────────────
+  // ─── Copy (via content script in main page) ────────────────────────────────
 
-  document.getElementById("btnCopy").addEventListener("click", async () => {
+  document.getElementById("btnCopy").addEventListener("click", () => {
     const text = document.getElementById("mdOutput").value;
     if (!text) return;
 
-    try {
-      await navigator.clipboard.writeText(text);
-      const btn       = document.getElementById("btnCopy");
-      btn.textContent = "Copied!";
-      setTimeout(() => { btn.textContent = "Copy"; }, 1500);
-    } catch (err) {
-      setStatus("Clipboard failed: " + err.message, "error");
-    }
+    window.parent.postMessage({ type: "COPY_TEXT_REQUEST", text: text }, "*");
   });
 
-  // ─── Download ──────────────────────────────────────────────────────────────
+  // ─── Download (via background — data URL) ──────────────────────────────────
 
   document.getElementById("btnDownload").addEventListener("click", () => {
     const text = document.getElementById("mdOutput").value;
@@ -211,6 +363,14 @@
       type:     "DOWNLOAD_MARKDOWN",
       content:  text,
       filename: currentFilename
+    }, (result) => {
+      if (chrome.runtime.lastError) {
+        setStatus("Download failed: " + chrome.runtime.lastError.message, "error");
+      } else if (result && result.ok) {
+        setStatus("✓ Downloaded " + currentFilename, "success");
+      } else {
+        setStatus("Download failed", "error");
+      }
     });
   });
 
@@ -220,8 +380,8 @@
     const current = this.textContent;
     const input   = document.createElement("input");
 
-    input.type        = "text";
-    input.value       = current;
+    input.type          = "text";
+    input.value         = current;
     input.style.cssText = `
       font-size: 12px;
       font-family: monospace;
@@ -240,11 +400,11 @@
       const newName   = input.value.trim();
       currentFilename = newName.endsWith(".md") ? newName : newName + ".md";
 
-      const span         = document.createElement("span");
-      span.id            = "previewTitle";
-      span.className     = "preview-title";
-      span.textContent   = currentFilename;
-      span.style.cursor  = "pointer";
+      const span       = document.createElement("span");
+      span.id          = "previewTitle";
+      span.className   = "preview-title";
+      span.textContent = currentFilename;
+      span.style.cursor = "pointer";
       span.addEventListener("click", function () {
         this.dispatchEvent(new Event("click"));
       });
@@ -284,18 +444,6 @@
     }
 
     counter.textContent = `${words} words · ${chars} chars`;
-  }
-
-  // ─── Helper: load a script into this page ─────────────────────────────────
-
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      const s    = document.createElement("script");
-      s.src      = src;
-      s.onload   = resolve;
-      s.onerror  = () => reject(new Error("Failed to load: " + src));
-      document.head.appendChild(s);
-    });
   }
 
 })();
