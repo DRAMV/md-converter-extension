@@ -316,6 +316,11 @@ git push origin feature/your-feature-name
 
 ---
 
+If MD Converter saves you time or helps your workflow, consider buying me a coffee or sponsoring me on GitHub. Your support helps me keep the extension updated and maintain the API costs!
+
+![Buy Me A Coffee](https://buymeacoffee.com/dramv)
+![(❤GitHub Sponsors](https://github.com/sponsors/DRAMV)
+
 ## License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
