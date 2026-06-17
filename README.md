@@ -318,8 +318,8 @@ git push origin feature/your-feature-name
 
 If MD Converter saves you time or helps your workflow, consider buying me a coffee or sponsoring me on GitHub. Your support helps me keep the extension updated and maintain the API costs!
 
-![Buy Me A Coffee](https://buymeacoffee.com/dramv)
-![(❤GitHub Sponsors](https://github.com/sponsors/DRAMV)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/dramv)
+[![❤GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-EA4AAA?style=flat-square&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/DRAMV)
 
 ## License
 
